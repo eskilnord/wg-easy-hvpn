@@ -339,6 +339,11 @@ module.exports = class Server {
       .get('/api/client/configs', defineEventHandler(async () => {
         return WireGuard.getAvailableConfigs();
       }))
+      .post('/api/client/config', defineEventHandler(async (event) => {
+        const { config } = await readBody(event);
+        await WireGuard.uploadClientConfig(config);
+        return { success: true };
+      }))
       .post('/api/client/switch-config', defineEventHandler(async (event) => {
         const { configName } = await readBody(event);
         await WireGuard.switchClientConfig(configName);
