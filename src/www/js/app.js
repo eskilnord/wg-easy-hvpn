@@ -182,6 +182,10 @@ new Vue({
       },
     },
 
+    mode: 'host',
+    availableConfigs: [],
+    activeConfig: null,
+    loading: false,
   },
   methods: {
     dateTime: (value) => {
@@ -379,6 +383,36 @@ new Vue({
     toggleCharts() {
       localStorage.setItem('uiShowCharts', this.uiShowCharts ? 1 : 0);
     },
+    async loadConfigs() {
+      this.loading = true;
+      try {
+        this.availableConfigs = await this.api.getClientConfigs();
+        this.activeConfig = await this.api.getActiveConfig();
+      } finally {
+        this.loading = false;
+      }
+    },
+    async switchConfig(configName) {
+      this.loading = true;
+      try {
+        await this.api.switchClientConfig(configName);
+        this.activeConfig = configName;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async addClientConfig(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      try {
+        const content = await file.text();
+        await this.api.uploadClientConfig(content);
+        await this.loadConfigs();
+      } catch (err) {
+        alert(err.message || err.toString());
+      }
+    }
   },
   filters: {
     bytes,

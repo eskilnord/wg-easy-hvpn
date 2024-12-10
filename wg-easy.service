@@ -12,6 +12,8 @@ Environment="PASSWORD=REPLACEME" # When set, requires a password when logging in
 #Environment="PORT=80" #TCP port for Web UI. Default : 51821
 #Environment="WG_MTU=1420" #The MTU the clients will use. Server uses default WG MTU
 #Environment="WG_PERSISTENT_KEEPALIVE=25" #Value in seconds to keep the "connection" open. If this value is 0, then connections won't be kept alive.
+Environment="WG_MODE=host" # Can be 'host' or 'client'
+Environment="WG_CLIENT_CONFIGS_PATH=/etc/wireguard/client-configs/" # Path to store client configs
 Type=simple
 RemainAfterExit=no
 ExecStart=/usr/bin/env node /app/server.js

@@ -40,6 +40,7 @@ const {
   WG_ENABLE_EXPIRES_TIME,
   ENABLE_PROMETHEUS_METRICS,
   PROMETHEUS_METRICS_PASSWORD,
+  WG_MODE,
 } = require('../config');
 
 const requiresPassword = !!PASSWORD_HASH;
@@ -310,6 +311,17 @@ module.exports = class Server {
         }
         const { expireDate } = await readBody(event);
         await WireGuard.updateClientExpireDate({ clientId, expireDate });
+        return { success: true };
+      }))
+      .get('/api/mode', defineEventHandler(() => {
+        return { mode: WG_MODE };
+      }))
+      .get('/api/client/configs', defineEventHandler(async () => {
+        return WireGuard.getAvailableConfigs();
+      }))
+      .post('/api/client/switch-config', defineEventHandler(async (event) => {
+        const { configName } = await readBody(event);
+        await WireGuard.switchClientConfig(configName);
         return { success: true };
       }));
 

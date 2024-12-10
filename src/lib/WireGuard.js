@@ -503,4 +503,29 @@ Endpoint = ${WG_HOST}:${WG_CONFIG_PORT}`;
     };
   }
 
+  async getAvailableConfigs() {
+    if (this.WG_MODE !== 'client') {
+      throw new Error('Not in client mode');
+    }
+    
+    const files = await fs.readdir(this.WG_CLIENT_CONFIGS_PATH);
+    return files.filter(f => f.endsWith('.conf'));
+  }
+
+  async switchClientConfig(configName) {
+    if (this.WG_MODE !== 'client') {
+      throw new Error('Not in client mode');
+    }
+    
+    // Disable current config
+    await Util.exec('wg-quick down wg0').catch(() => {});
+    
+    // Load new config
+    const configPath = path.join(this.WG_CLIENT_CONFIGS_PATH, configName);
+    await fs.copyFile(configPath, path.join(WG_PATH, 'wg0.conf'));
+    
+    // Enable new config
+    await Util.exec('wg-quick up wg0');
+  }
+
 };

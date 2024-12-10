@@ -192,4 +192,34 @@ class API {
     });
   }
 
+  async getMode() {
+    return this.call({
+      method: 'get',
+      path: '/api/mode',
+    });
+  }
+
+  async getClientConfigs() {
+    return this.call({
+      method: 'get',
+      path: '/api/client/configs',
+    });
+  }
+
+  async switchClientConfig(configName) {
+    return this.call({
+      method: 'post',
+      path: '/api/client/switch-config',
+      body: { configName },
+    });
+  }
+
+  async uploadClientConfig(configContent) {
+    return this.call({
+      method: 'post',
+      path: '/api/client/config',
+      body: { config: configContent },
+    });
+  }
+
 }
