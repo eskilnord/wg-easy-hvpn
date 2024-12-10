@@ -6,6 +6,7 @@ const debug = require('debug')('WireGuard');
 const crypto = require('node:crypto');
 const QRCode = require('qrcode');
 const CRC32 = require('crc-32');
+const { exec } = require('child_process');
 
 const Util = require('./Util');
 const ServerError = require('./ServerError');
@@ -216,15 +217,15 @@ ${client.preSharedKey ? `PresharedKey = ${client.preSharedKey}\n` : ''
 [Interface]
 PrivateKey = ${client.privateKey ? `${client.privateKey}` : 'REPLACE_ME'}
 Address = ${client.address}/24
-${WG_DEFAULT_DNS ? `DNS = ${WG_DEFAULT_DNS}\n` : ''}\
-${WG_MTU ? `MTU = ${WG_MTU}\n` : ''}\
+DNS = ${WG_DEFAULT_DNS || '1.1.1.1, 8.8.8.8'}
+MTU = ${WG_MTU || '1420'}
 
 [Peer]
 PublicKey = ${config.server.publicKey}
-${client.preSharedKey ? `PresharedKey = ${client.preSharedKey}\n` : ''
-}AllowedIPs = ${WG_ALLOWED_IPS}
-PersistentKeepalive = ${WG_PERSISTENT_KEEPALIVE}
-Endpoint = ${WG_HOST}:${WG_CONFIG_PORT}`;
+${client.preSharedKey ? `PresharedKey = ${client.preSharedKey}\n` : ''}
+AllowedIPs = 0.0.0.0/0, ::/0
+PersistentKeepalive = ${WG_PERSISTENT_KEEPALIVE || '25'}
+Endpoint = ${WG_HOST}:${WG_PORT}`;
   }
 
   async getClientQRCodeSVG({ clientId }) {
@@ -526,6 +527,43 @@ Endpoint = ${WG_HOST}:${WG_CONFIG_PORT}`;
     
     // Enable new config
     await Util.exec('wg-quick up wg0');
+  }
+
+  async uploadClientConfig(configContent) {
+    try {
+      // Validate config content
+      if (!configContent || typeof configContent !== 'string') {
+        throw new Error('Invalid configuration content');
+      }
+
+      // Parse and validate the config
+      const configLines = configContent.split('\n');
+      if (!configLines.some(line => line.includes('[Interface]'))) {
+        throw new Error('Invalid WireGuard configuration');
+      }
+
+      // Save the config
+      await fs.writeFile(path.join(WG_PATH, 'wg0.conf'), configContent);
+      
+      // Restart WireGuard to apply changes
+      await this.restart();
+
+      return true;
+    } catch (error) {
+      console.error('Error uploading config:', error);
+      throw error;
+    }
+  }
+
+  async restart() {
+    try {
+      await exec('wg-quick down wg0');
+      await exec('wg-quick up wg0');
+      return true;
+    } catch (error) {
+      console.error('Error restarting WireGuard:', error);
+      throw error;
+    }
   }
 
 };
