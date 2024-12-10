@@ -135,6 +135,7 @@ module.exports = class Server {
         return {
           requiresPassword,
           authenticated,
+          firstLogin: event.node.req.session?.firstLogin || false,
         };
       }))
       .get('/cnf/:clientOneTimeLink', defineEventHandler(async (event) => {
@@ -159,8 +160,6 @@ module.exports = class Server {
         const { password, remember } = await readBody(event);
 
         if (!requiresPassword) {
-          // if no password is required, the API should never be called.
-          // Do not automatically authenticate the user.
           throw createError({
             status: 401,
             message: 'Invalid state',
@@ -178,9 +177,30 @@ module.exports = class Server {
           event.node.req.session.cookie.maxAge = MAX_AGE;
         }
         event.node.req.session.authenticated = true;
+        event.node.req.session.firstLogin = true;
         event.node.req.session.save();
 
         debug(`New Session: ${event.node.req.session.id}`);
+
+        return { success: true };
+      }))
+      .post('/api/change-password', defineEventHandler(async (event) => {
+        if (!event.node.req.session?.authenticated) {
+          throw createError({
+            status: 401,
+            message: 'Not authenticated',
+          });
+        }
+
+        const { newPassword } = await readBody(event);
+        const newHash = await bcrypt.hash(newPassword, 12);
+        
+        // Update the password hash
+        process.env.PASSWORD_HASH = newHash;
+        
+        // Mark first login as complete
+        event.node.req.session.firstLogin = false;
+        event.node.req.session.save();
 
         return { success: true };
       }));

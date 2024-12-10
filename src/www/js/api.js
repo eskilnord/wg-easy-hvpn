@@ -222,4 +222,21 @@ class API {
     });
   }
 
+  async changePassword(password) {
+    const res = await fetch('/api/change-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ newPassword: password }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to change password');
+    }
+
+    return res.json();
+  }
+
 }

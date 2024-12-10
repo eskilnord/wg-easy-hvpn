@@ -186,6 +186,10 @@ new Vue({
     availableConfigs: [],
     activeConfig: null,
     loading: false,
+
+    showChangePasswordModal: false,
+    newPassword: '',
+    confirmPassword: '',
   },
   methods: {
     dateTime: (value) => {
@@ -409,6 +413,20 @@ new Vue({
         const content = await file.text();
         await this.api.uploadClientConfig(content);
         await this.loadConfigs();
+      } catch (err) {
+        alert(err.message || err.toString());
+      }
+    },
+    async changePassword() {
+      if (!this.newPassword || this.newPassword !== this.confirmPassword) {
+        return;
+      }
+
+      try {
+        await this.api.changePassword(this.newPassword);
+        this.showChangePasswordModal = false;
+        this.newPassword = '';
+        this.confirmPassword = '';
       } catch (err) {
         alert(err.message || err.toString());
       }
